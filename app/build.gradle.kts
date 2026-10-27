@@ -128,12 +128,19 @@ android {
 
 androidComponents {
     onVariants(selector().withBuildType("release")) { variant ->
-        variant.outputs.forEach { output ->
-            val abi = output.filters.find {
-                it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI
-            }?.identifier ?: "universal"
-            val version = variant.versionName ?: "unknown"
-            output.outputFileName.set("tg-ws-proxy-android_${version}_${abi}.apk")
+        val version = variant.versionName ?: "unknown"
+        val arch = variant.flavorName.ifEmpty { "universal" }
+        val newName = "tg-ws-proxy-android_${version}_${arch}.apk"
+
+        val copyTask = tasks.register<Copy>("copy${variant.name.replaceFirstChar { it.uppercase() }}Apk") {
+            from(layout.buildDirectory.dir("outputs/apk/${variant.name}")) {
+                include("*.apk")
+            }
+            into(layout.buildDirectory.dir("outputs/apk/${variant.name}"))
+            rename { newName }
+        }
+        tasks.named("assemble${variant.name.replaceFirstChar { it.uppercase() }}") {
+            finalizedBy(copyTask)
         }
     }
 }
