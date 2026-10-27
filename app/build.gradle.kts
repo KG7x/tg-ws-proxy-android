@@ -13,7 +13,7 @@ android {
         applicationId = "com.amurcanov.tgwsproxy"
         targetSdk = 35
         versionCode = 123
-        versionName = "1.2.3"
+        versionName = "1.2.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -124,6 +124,20 @@ android {
             jniLibs.srcDirs("src/main/jniLibs")
         }
     }
+
+    androidComponents {
+        onVariants(selector().withBuildType("release")) { variant ->
+            variant.outputs.forEach { output ->
+                val abi = output.filters.find { it.filterType == com.android.build.api.variant.FilterConfiguration.FilterType.ABI }?.identifier
+                    ?: "universal"
+                val version = variant.versionName ?: "unknown"
+                (output as com.android.build.api.variant.impl.VariantOutputImpl).outputFileName.set(
+                    "tg-ws-proxy-android_${version}_${abi}.apk"
+                )
+            }
+        }
+    }
+
 }
 
 dependencies {
