@@ -119,3 +119,27 @@ jobs:
           path: src/app/build/outputs/apk/universal/**/*.apk
           if-no-files-found: error
           archive: false
+
+  create-release:
+    if: github.ref == 'refs/heads/tst' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: tg-ws-proxy-android_*
+          path: artifacts
+          merge-multiple: true
+
+      - name: Show what we got
+        run: ls -l artifacts/
+
+      - name: Create latest build
+        uses: czietz/action-automatic-releases@latest
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          automatic_release_tag: "latest"
+          prerelease: false
+          title: Latest Build
+          files: artifacts/*.apk
