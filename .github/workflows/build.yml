@@ -124,6 +124,8 @@ jobs:
     if: github.ref == 'refs/heads/tst' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: [build]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v8
