@@ -126,25 +126,6 @@ android {
     }
 }
 
-androidComponents {
-    onVariants(selector().withBuildType("release")) { variant ->
-        val version = variant.versionName ?: "unknown"
-        val arch = variant.flavorName.ifEmpty { "universal" }
-        val newName = "tg-ws-proxy-android_${version}_${arch}.apk"
-
-        val copyTask = tasks.register<Copy>("copy${variant.name.replaceFirstChar { it.uppercase() }}Apk") {
-            from(layout.buildDirectory.dir("outputs/apk/${variant.name}")) {
-                include("*.apk")
-            }
-            into(layout.buildDirectory.dir("outputs/apk/${variant.name}"))
-            rename { newName }
-        }
-        tasks.named("assemble${variant.name.replaceFirstChar { it.uppercase() }}") {
-            finalizedBy(copyTask)
-        }
-    }
-}
-
 dependencies {
     implementation("androidx.core:core-ktx:1.15.0")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
