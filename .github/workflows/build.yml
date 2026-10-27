@@ -88,7 +88,7 @@ jobs:
         id: apk
         working-directory: src
         run: |
-          VERSION=$(grep -oP 'versionName = "\K[^"]+' self/app/build.gradle.kts)
+          VERSION=$(grep -oP 'versionName = "\K[^"]+' "$GITHUB_WORKSPACE/self/app/build.gradle.kts")
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "APK version: $VERSION"
           for f in app/build/outputs/apk/*/*/*.apk; do
