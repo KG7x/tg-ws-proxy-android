@@ -88,7 +88,7 @@ jobs:
         id: apk
         working-directory: src
         run: |
-          VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          VERSION=$(grep -oP 'versionName = "\K[^"]+' self/app/build.gradle.kts)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "APK version: $VERSION"
           for f in app/build/outputs/apk/*/*/*.apk; do
@@ -100,7 +100,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: tg-ws-proxy-android_${{ steps.apk.outputs.version }}_arm64
-          path: src/app/build/outputs/apk/arm64/**/tg-ws-proxy-android_*.apk
+          path: src/app/build/outputs/apk/arm64/**/*.apk
           if-no-files-found: error
           archive: false
 
@@ -108,7 +108,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: tg-ws-proxy-android_${{ steps.apk.outputs.version }}_arm32
-          path: src/app/build/outputs/apk/arm32/**/tg-ws-proxy-android_*.apk
+          path: src/app/build/outputs/apk/arm32/**/*.apk
           if-no-files-found: error
           archive: false
 
