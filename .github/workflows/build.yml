@@ -96,7 +96,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: tg-ws-proxy-android_arm32
-          path: src/app/build/outputs/apk/arm32/*.apk
+          path: src/app/build/outputs/apk/arm32/**/*.apk
           if-no-files-found: error
           archive: false
 
