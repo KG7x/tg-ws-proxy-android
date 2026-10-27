@@ -83,11 +83,27 @@ jobs:
       - name: Build APKs
         working-directory: src
         run: gradle assembleRelease --no-daemon --stacktrace
- 
-      - name: Upload APKs
+
+      - name: Upload arm64-v8a APK
         uses: actions/upload-artifact@v7
         with:
-          name: tg-ws-proxy-apk-${{ inputs.commit }}
-          path: src/app/build/outputs/apk/**/*.apk
+          name: tg-ws-proxy-android_arm64
+          path: src/app/build/outputs/apk/arm64/**/*.apk
+          if-no-files-found: error
+          archive: false
+
+      - name: Upload armeabi-v7a APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: tg-ws-proxy-android_arm32
+          path: src/app/build/outputs/apk/arm32/*.apk
+          if-no-files-found: error
+          archive: false
+
+      - name: Upload universal APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: tg-ws-proxy-android_universal
+          path: src/app/build/outputs/apk/universal/**/*.apk
           if-no-files-found: error
           archive: false
