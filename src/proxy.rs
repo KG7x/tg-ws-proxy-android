@@ -255,17 +255,17 @@ impl WsPool {
         }
         let needed = pool_sz - cur_len;
 
-        let mut set = tokio::task::JoinSet::new();
+        let mut handles = Vec::new();
         for _ in 0..needed {
             let target_ip = target_ip.clone();
             let domains = domains.clone();
             let cancel = self.cancel_token.clone();
-            set.spawn(async move {
+            handles.push(tokio::spawn(async move {
                 tokio::select! {
                     _ = cancel.cancelled() => None,
                     r = connect_one_ws(&target_ip, &domains) => r,
                 }
-            });
+            }));
         }
 
         let mut connected = 0;
@@ -1291,12 +1291,12 @@ async fn cfproxy_acquire_ws(
     if ws.is_none() && ordered.len() > 1 {
         let remaining_domains: Vec<String> = ordered[1..].to_vec();
         let sem = Arc::new(tokio::sync::Semaphore::new(CFPROXY_FALLBACK_PARALLEL));
-        let mut handles = Vec::new();
+        let mut set = tokio::task::JoinSet::new();
         for bd in remaining_domains {
             let sem = sem.clone();
             let cancel = cancel_token.clone();
             let ws_path = ws_path.to_string();
-            handles.push(tokio::spawn(async move {
+            set.spawn(async move {
                 tokio::select! {
                     _ = cancel.cancelled() => None,
                     r = async {
