@@ -73,7 +73,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: tg-ws-proxy-android_${{ steps.apk.outputs.version }}_arm64
-          path: app/build/outputs/apk/arm64/**/tg-ws-proxy-android_*.apk
+          path: app/build/outputs/apk/arm64/**/*.apk
           if-no-files-found: error
           archive: false
 
@@ -81,7 +81,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: tg-ws-proxy-android_${{ steps.apk.outputs.version }}_arm32
-          path: app/build/outputs/apk/arm32/**/tg-ws-proxy-android_*.apk
+          path: app/build/outputs/apk/arm32/**/*.apk
           if-no-files-found: error
           archive: false
 
@@ -89,7 +89,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: tg-ws-proxy-android_${{ steps.apk.outputs.version }}_universal
-          path: app/build/outputs/apk/universal/**/tg-ws-proxy-android_*.apk
+          path: app/build/outputs/apk/universal/**/*.apk
           if-no-files-found: error
           archive: false
 
