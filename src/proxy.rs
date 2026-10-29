@@ -255,12 +255,12 @@ impl WsPool {
         }
         let needed = pool_sz - cur_len;
 
-        let mut handles = Vec::new();
+        let mut set = tokio::task::JoinSet::new();
         for _ in 0..needed {
             let target_ip = target_ip.clone();
             let domains = domains.clone();
             let cancel = self.cancel_token.clone();
-            handles.push(tokio::spawn(async move {
+            set.spawn(async move {
                 tokio::select! {
                     _ = cancel.cancelled() => None,
                     r = connect_one_ws(&target_ip, &domains) => r,
@@ -1305,20 +1305,20 @@ async fn cfproxy_acquire_ws(
                         w.map(|ws| (ws, d))
                     } => r,
                 }
-            }));
+            });
         }
-        for h in handles {
-            if let Ok(Some((w, d))) = h.await {
-                if ws.is_none() {
-                    ws = Some(w);
-                    chosen_domain = d;
-                } else {
-                    tokio::spawn(async move {
-                        w.close().await;
-                    });
-                }
+        // Берём первый успешный домен и сразу прекращаем перебор остальных.
+        // Раньше здесь ждали завершения ВСЕХ попыток (до ~20 доменов по 2
+        // параллельно), и найденное соединение простаивало, пока клиент
+        // Telegram не отваливался по таймауту.
+        while let Some(res) = set.join_next().await {
+            if let Ok(Some((w, d))) = res {
+                ws = Some(w);
+                chosen_domain = d;
+                break;
             }
         }
+        set.abort_all();
     }
 
     match ws {
