@@ -1,72 +1,54 @@
 name: Build APK
- 
+
 on:
   workflow_dispatch:
     inputs:
-      commit:
-        description: "Commit SHA to build"
+      ref:
+        description: "Branch/tag to build"
         required: true
-        default: "7c7f1684312a76f64ed0436c5d5da06a3baa63ce"
- 
+        default: "tst"
+
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 60
- 
+
     steps:
-      - name: Get source at commit
-        run: |
-          git init src && cd src
-          git remote add origin https://github.com/amurcanov/tg-ws-proxy-android.git
-          # Commit may live only in a pull request, so fall back to fetching PR refs
-          git fetch --depth 1 origin "${{ inputs.commit }}" \
-            || git fetch origin '+refs/pull/*/head:refs/remotes/pr/*'
-          git checkout --detach "${{ inputs.commit }}"
-          git log -1 --oneline
- 
-      - name: Get my patches from this fork
+      - name: Checkout source
         uses: actions/checkout@v7
         with:
-          path: self
- 
-      - name: Apply patches
-        working-directory: src
-        run: |
-          shopt -s nullglob
-          for p in ../self/*.patch; do
-            echo "Applying $p"
-            git apply --verbose "$p"
-          done
- 
+          ref: ${{ inputs.ref }}
+
       - name: Set up JDK
         uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "21"
- 
+
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v5
         with:
           gradle-version: "9.6.0"
- 
+
       - name: Set up Rust
         run: |
           rustup update stable
           rustup default stable
           rustup target add aarch64-linux-android armv7-linux-androideabi
           cargo install cargo-ndk --locked
- 
+
       - name: Build native library (.so)
-        working-directory: src
         run: |
           export ANDROID_NDK_HOME="${ANDROID_NDK_LATEST_HOME:-$ANDROID_NDK_ROOT}"
           echo "Using NDK: $ANDROID_NDK_HOME"
           cargo ndk -t arm64-v8a --platform 24 -o app/src/main/jniLibs build --release
           cargo ndk -t armeabi-v7a --platform 21 -o app/src/main/jniLibs build --release
           ls -la app/src/main/jniLibs/*/
- 
+
       - name: Create signing key and local.properties
-        working-directory: src
         run: |
           keytool -genkeypair -v -keystore "$RUNNER_TEMP/release.keystore" \
             -alias tgws -keyalg RSA -keysize 2048 -validity 10000 \
@@ -79,16 +61,14 @@ jobs:
           KEY_ALIAS=tgws
           KEY_PASSWORD=android
           EOF
- 
+
       - name: Build APKs
-        working-directory: src
         run: gradle assembleRelease --no-daemon --stacktrace
 
       - name: Get version and rename APKs
         id: apk
-        working-directory: src
         run: |
-          VERSION=$(grep -oP 'versionName = "\K[^"]+' "$GITHUB_WORKSPACE/self/app/build.gradle.kts")
+          VERSION=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           echo "APK version: $VERSION"
           for f in app/build/outputs/apk/*/*/*.apk; do
@@ -100,7 +80,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: tg-ws-proxy-android_${{ steps.apk.outputs.version }}_arm64
-          path: src/app/build/outputs/apk/arm64/**/*.apk
+          path: app/build/outputs/apk/arm64/**/tg-ws-proxy-android_*.apk
           if-no-files-found: error
           archive: false
 
@@ -108,7 +88,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: tg-ws-proxy-android_${{ steps.apk.outputs.version }}_arm32
-          path: src/app/build/outputs/apk/arm32/**/*.apk
+          path: app/build/outputs/apk/arm32/**/tg-ws-proxy-android_*.apk
           if-no-files-found: error
           archive: false
 
@@ -116,7 +96,7 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: tg-ws-proxy-android_${{ steps.apk.outputs.version }}_universal
-          path: src/app/build/outputs/apk/universal/**/*.apk
+          path: app/build/outputs/apk/universal/**/tg-ws-proxy-android_*.apk
           if-no-files-found: error
           archive: false
 
@@ -124,8 +104,6 @@ jobs:
     if: github.ref == 'refs/heads/tst' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
     needs: [build]
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - name: Download Artifacts
         uses: actions/download-artifact@v8
