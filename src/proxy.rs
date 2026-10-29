@@ -265,7 +265,7 @@ impl WsPool {
                     _ = cancel.cancelled() => None,
                     r = connect_one_ws(&target_ip, &domains) => r,
                 }
-            }));
+            });
         }
 
         let mut connected = 0;
